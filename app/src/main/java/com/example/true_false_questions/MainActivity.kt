@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,31 +27,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.true_false_questions.ui.theme.True_false_questionsTheme
+import kotlin.reflect.KProperty
 
-class Greeting(s: String) {
 
-}
+data class Question(val text: String, val isCorrect: Boolean)
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             True_false_questionsTheme {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TrueFalseGame(
-
-                    )
+                    TrueFalseGame()
                 }
             }
         }
@@ -60,90 +54,117 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TrueFalseGame() {
-    var isCorrect by remember { mutableStateOf(false) }
-    var isSelectedAnsr by remember { mutableStateOf(false) }
-    var isButtonSelect by remember { mutableStateOf(false) }
-    var currentQuestionIndex by remember { mutableStateOf(0) }
-    val questions = listOf(
-        Question("my name is maha ?",true),
-        Question(" is the sky blue ?",true),
-        Question("all animals have 4 legs ?",false)
-    )
-    val currentQuestion = questions.getOrNull(currentQuestionIndex)
+    var showNextButton by remember { mutableStateOf(false) }
+    var questions by remember { mutableStateOf<List<Question>>(emptyList()) }
+    var currentQuestionIndex = remember { mutableStateOf(0) }
+    var AnsrCorrect by remember { mutableStateOf(false) }
+    var UserAnsr by remember { mutableStateOf(false) }
+    var ButtonAnsr by remember { mutableStateOf(false) }
+    var showFeedback by remember { mutableStateOf(false) }
+    //   var showNextQuestion by remember { mutableStateOf(false) }
+    var userScore = remember { mutableStateOf(0) }
 
-    var selectedAnswer by remember { mutableStateOf<Boolean?>(null) }
-    var userScore by remember { mutableStateOf(0) }
+    if (questions.isEmpty()) {
+        questions = listOf(
+            Question("my name is maha ", true),
+            Question("is the sky blue ?", true),
+            Question("all animals have 4 legs ?", false),
+        )
 
-    if (isSelectedAnsr){ isCorrect = selectedAnswer == currentQuestion?.answer
     }
+    AnsrCorrect = UserAnsr == questions[currentQuestionIndex.value].isCorrect
 
     Column(
         modifier = Modifier
-            .clip(CircleShape)
             .fillMaxSize()
-            .width(200.dp)
             .padding(40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Step 1
-        Text(text = currentQuestion?.text ?: "GAME OVER!!",
+        Text(
+            text = questions[currentQuestionIndex.value].text,
             modifier = Modifier.padding(bottom = 20.dp)
         )
-
-        // Step 5
-        if (isCorrect) {
-            AnswerFeedback("Correct!", MaterialTheme.colorScheme.secondary)
-        } else {
-            AnswerFeedback("Wrong!", MaterialTheme.colorScheme.error)
+        var showResetButton = currentQuestionIndex.value == questions.size - 1
+        if (showResetButton) {
+            ResetButton(currentQuestionIndex, userScore)
         }
-        if (isButtonSelect){
+
+        if (AnsrCorrect && showFeedback && !showResetButton) {
+            AnswerFeedback("Correct!", MaterialTheme.colorScheme.secondary)
+            Text(text = "Score: ${userScore.value}")
+        }
+
+        if (showNextButton) {
             Button(
-                onClick = { isButtonSelect = false
-                    selectedAnswer = null
-                    if (currentQuestionIndex < questions.size -1){                             if (isCorrect) userScore++
-                        currentQuestionIndex++} else {
-                        userScore=0
-                        currentQuestionIndex=0
+                onClick = {
+                    ButtonAnsr = false
+                    showFeedback = false
+                    showNextButton = false
+                    if (currentQuestionIndex.value < questions.size - 1) {
+                        currentQuestionIndex.value++
                     }
                 },
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .align(Alignment.End)
                     .width(200.dp)
                     .padding(10.dp),
             ) {
-                Text(text = if (currentQuestionIndex < questions.size -1 ) "Next Question" else "RESTART GAME")
+                Text(text = "Next Question")
             }
-        }else {
+        }
+
+        if (!showNextButton && !AnsrCorrect && showFeedback) {
+            ButtonAnsr = true
+            AnswerFeedback("Wrong!", MaterialTheme.colorScheme.error)
+        }
+
+        if (!showNextButton) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
-
             ) {
-                // Step 3
                 TrueFalseButton("True") {
-                    isSelectedAnsr = true
-                    isButtonSelect = true
+                    UserAnsr = true
+                    ButtonAnsr = true
+                    AnsrCorrect = UserAnsr == questions[currentQuestionIndex.value].isCorrect
+                    userScore.value += 1
+                    showFeedback = true
+                    showNextButton = true
                 }
                 TrueFalseButton("False") {
-                    isSelectedAnsr = true
-                    selectedAnswer = false}
+                    UserAnsr = false
+                    ButtonAnsr = true
+                    AnsrCorrect = UserAnsr == questions[currentQuestionIndex.value].isCorrect
+                    showFeedback = true
+                    showNextButton = true
+                }
             }
         }
     }
+}
+
+
+private operator fun Any.setValue(nothing: Nothing?, property: KProperty<*>, any: Any) {
 
 }
 
 
 
+@Composable
+fun ResetButton(currentQuestionIndex: MutableState<Int>, userScore: MutableState<Int>) {
+    Button(onClick = {
+        currentQuestionIndex.value = 0
+        userScore.value = 0
+    }) {
+        Text(text = "Reset Game")
+    }
+}
 
 @Composable
-fun TrueFalseButton(text: String, onSelected: () -> Unit) {
+fun TrueFalseButton(text: String, UserAnsr: () -> Unit) {
     Button(
         onClick = {
-            onSelected()
+            UserAnsr()
         },
         modifier = Modifier
             .width(120.dp)
@@ -152,7 +173,6 @@ fun TrueFalseButton(text: String, onSelected: () -> Unit) {
         Text(text = text)
     }
 }
-
 
 @Composable
 fun AnswerFeedback(message: String, backgroundColor: androidx.compose.ui.graphics.Color) {
@@ -163,34 +183,22 @@ fun AnswerFeedback(message: String, backgroundColor: androidx.compose.ui.graphic
             .clip(MaterialTheme.shapes.large)
             .background(backgroundColor)
             .padding(16.dp),
-        contentAlignment = Alignment.Center
+        Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-
                 text = message,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimary
-
             )
         }
     }
 }
 
-@Composable
-        fun GreetingPreview() {
-            True_false_questionsTheme {
-                Greeting("Android")
-            }
-        }
-data class Question(val text: String, val answer: Boolean)
 @Preview(showBackground = true)
 @Composable
 fun TrueFalseGamePreview() {
-
-    True_false_questionsTheme {
-        TrueFalseGame()
-    }
+    TrueFalseGame()
 }
