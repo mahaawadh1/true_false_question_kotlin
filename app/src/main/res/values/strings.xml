@@ -1,3 +1,10 @@
 <resources>
+
+    <string-array name="question_array">
+        <item> my name is maha </item>
+        <item> is the sky blue </item>
+        <item> all animals have 4 legs </item>
+
+    </string-array>
     <string name="app_name">true_false_questions</string>
 </resources>

@@ -2,6 +2,7 @@ package com.example.true_false_questions
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,16 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.true_false_questions.ui.theme.True_false_questionsTheme
 import kotlin.reflect.KProperty
-
-
 data class Question(val text: String, val isCorrect: Boolean)
-
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -61,7 +59,6 @@ fun TrueFalseGame() {
     var UserAnsr by remember { mutableStateOf(false) }
     var ButtonAnsr by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
-    //   var showNextQuestion by remember { mutableStateOf(false) }
     var userScore = remember { mutableStateOf(0) }
 
     if (questions.isEmpty()) {
@@ -93,7 +90,10 @@ fun TrueFalseGame() {
         if (AnsrCorrect && showFeedback && !showResetButton) {
             AnswerFeedback("Correct!", MaterialTheme.colorScheme.secondary)
             Text(text = "Score: ${userScore.value}")
-        }
+            Image(
+                painter = painterResource(id = R.drawable.correct_answer ),
+                contentDescription = null, // Provide appropriate content description
+            )}
 
         if (showNextButton) {
             Button(
@@ -112,12 +112,10 @@ fun TrueFalseGame() {
                 Text(text = "Next Question")
             }
         }
-
         if (!showNextButton && !AnsrCorrect && showFeedback) {
             ButtonAnsr = true
             AnswerFeedback("Wrong!", MaterialTheme.colorScheme.error)
         }
-
         if (!showNextButton) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,13 +140,8 @@ fun TrueFalseGame() {
         }
     }
 }
-
-
 private operator fun Any.setValue(nothing: Nothing?, property: KProperty<*>, any: Any) {
-
 }
-
-
 
 @Composable
 fun ResetButton(currentQuestionIndex: MutableState<Int>, userScore: MutableState<Int>) {
@@ -159,7 +152,6 @@ fun ResetButton(currentQuestionIndex: MutableState<Int>, userScore: MutableState
         Text(text = "Reset Game")
     }
 }
-
 @Composable
 fun TrueFalseButton(text: String, UserAnsr: () -> Unit) {
     Button(
@@ -167,18 +159,17 @@ fun TrueFalseButton(text: String, UserAnsr: () -> Unit) {
             UserAnsr()
         },
         modifier = Modifier
-            .width(120.dp)
+            .width(150.dp)
             .height(40.dp)
     ) {
         Text(text = text)
     }
 }
-
 @Composable
 fun AnswerFeedback(message: String, backgroundColor: androidx.compose.ui.graphics.Color) {
     Box(
         modifier = Modifier
-            .size(100.dp)
+            .size(200.dp)
             .clip(CircleShape)
             .clip(MaterialTheme.shapes.large)
             .background(backgroundColor)
@@ -193,10 +184,10 @@ fun AnswerFeedback(message: String, backgroundColor: androidx.compose.ui.graphic
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimary
             )
+
         }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun TrueFalseGamePreview() {
